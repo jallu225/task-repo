@@ -1,0 +1,3 @@
+FROM ubuntu
+RUN cd home && mkdir test
+RUN ps -ex > /home/test/sample.txt
