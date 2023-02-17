@@ -7,7 +7,7 @@ pipeline {
     stages {
         stage('Git Checkout') {
           steps {
-                git 'https://github.com/jglick/simple-maven-project-with-tests.git'
+                git 'https://github.com/jallu225/task-repo.git'
             }
         }
         stage('Docker Build') {
