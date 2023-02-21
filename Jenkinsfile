@@ -1,24 +1,22 @@
-pipeline {
-    agent any
-    stages {
-        stage('Git Checkout') {
-          steps {
-                git 'https://github.com/jallu225/task-repo.git'
-            }
-        }
-        stage('Docker Build') {
-            steps {
-                sh 'docker build -t taskdemo .'
-            }
-        }
-        stage('Docker push'){
-            steps {
-                withCredentials([string(credentialsId: 'dockerhub_passwd', variable: 'docker_pass')]) {
-                  sh 'docker login -u rajesh1218 -p ${docker_pass}'
-                  sh 'docker tag taskdemo rajesh1218/taskdemo:latest'
-                  sh 'docker push rajesh1218/taskdemo:latest'
-               }
-            }
+node {
+    stage('Git Checkout') {
+        git branch: 'demo', url: 'https://github.com/jallu225/task-repo.git'
+    }
+    stage('copy files to Docker-Host'){
+        sshagent(['docker-server']) {
+            sh 'ssh -o StrictHostKeyChecking=no -l ec2-user 3.110.174.129 uname -a'
+            sh 'scp -o StrictHostKeyChecking=no /var/jenkins_home/jobs/deploytok8s/workspace/* ec2-user@3.110.174.129:/home/ec2-user'
+    }
+    stage('Docker Build') {
+        sshagent(['docker-server']) {
+           sh 'ssh -o StrictHostKeyChecking=no -l ec2-user 3.110.174.129 cd /home/ec2-user/'
+           sh 'ssh -o StrictHostKeyChecking=no -l ec2-user 3.110.174.129 docker build -t $JOB_NAME:v1.$BUILD_ID .'
         }
     }
+    stage('Docker image tagging And Push to dockerhub') {
+        sshagent(['docker-server']) {
+           sh 'ssh -o StrictHostKeyChecking=no -l ec2-user 3.110.174.129 docker tag $JOB_NAME:v1.$BUILD_ID rajeshjallu/$JOB_NAME:latest'
+           sh 'ssh -o StrictHostKeyChecking=no -l ec2-user 3.110.174.129 docker push rajeshjallu/$JOB_NAME:latest'
+        }
+    }    
 }
